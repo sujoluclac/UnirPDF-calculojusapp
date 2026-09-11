@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Cálculo do desconto previdenciário do INSS pelo RGPS, com aplicação progressiva por faixa.">
+<title>Desconto do INSS | CálculoJus</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F3E9DC;color:#172B46;font-family:Arial,sans-serif;line-height:1.55}
+header{background:#fff;border-bottom:1px solid #e2dbd2}
+.nav{max-width:1100px;margin:auto;padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
+.logo{font:700 25px Georgia,serif;display:flex;align-items:center;gap:10px;color:#172B46}
+.logo-bar{width:5px;height:30px;background:#A85F43}
+.back{font-size:13px;text-decoration:none;color:#172B46}
+main{max-width:1000px;margin:auto;padding:54px 22px 70px}
+.hero{text-align:center;max-width:760px;margin:0 auto 34px}
+.kicker{font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#A85F43}
+h1,h2,h3{font-family:Georgia,serif;line-height:1.2}
+h1{font-size:42px;margin:12px 0 14px}
+.hero p{color:#6F747A;font-size:16px;margin:0}
+.card{background:#fff;border:1px solid #e1dbd4;border-radius:6px;padding:30px;box-shadow:0 8px 25px rgba(23,43,70,.06)}
+label{display:block;font-weight:700;font-size:13px;margin-bottom:8px}
+.input-wrap{display:flex;max-width:480px}
+.prefix{padding:13px 12px;background:#F3E9DC;border:1px solid #d9d0c5;border-right:0;border-radius:5px 0 0 5px;font-weight:700}
+input{width:100%;padding:13px;border:1px solid #d9d0c5;border-radius:0 5px 5px 0;font-size:17px;color:#172B46;outline:none}
+input:focus{border-color:#A85F43}
+button{border:0;border-radius:5px;padding:13px 20px;font-weight:700;cursor:pointer}
+.primary{background:#172B46;color:#fff;margin-top:16px}
+.secondary{background:#F3E9DC;color:#172B46}
+.result{display:none;margin-top:30px;border-top:1px solid #e4ded7;padding-top:28px}
+.result.show{display:block}
+.result h2{font-size:29px;margin:0 0 20px}
+.total{background:#F3E9DC;border-left:4px solid #A85F43;padding:20px;margin-bottom:22px}
+.total span{display:block;color:#6F747A;font-size:12px;text-transform:uppercase;letter-spacing:1px}
+.total strong{display:block;font:700 32px Georgia,serif;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;background:#172B46;color:#fff;padding:12px 10px}
+td{padding:12px 10px;border-bottom:1px solid #e4ded7}
+td.num{text-align:right;white-space:nowrap}
+tfoot td{font-weight:700;border-top:2px solid #172B46;border-bottom:0}
+.note{margin-top:25px;padding:18px;background:#faf7f3;border:1px solid #e4ded7;color:#6F747A;font-size:13px}
+.note strong{color:#172B46}
+.info{margin-top:18px;color:#6F747A;font-size:12px}
+.error{display:none;color:#A85F43;font-size:13px;margin-top:9px}
+.error.show{display:block}
+footer{text-align:center;color:#6F747A;font-size:11px;padding:25px}
+@media(max-width:600px){h1{font-size:33px}.card{padding:20px}table{font-size:12px}th,td{padding:9px 6px}.input-wrap{max-width:none}}
+</style>
+</head>
+<body>
+<header>
+<div class="nav">
+  <div class="logo"><i class="logo-bar"></i>CálculoJus</div>
+  <a class="back" href="https://ferramentas.calculojus.app.br/">← Ferramentas</a>
+</div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="kicker">Ferramenta gratuita</div>
+  <h1>Cálculo do Desconto do INSS</h1>
+  <p>Calcule a contribuição previdenciária do segurado empregado, empregado doméstico e trabalhador avulso, aplicando a alíquota progressiva por faixa.</p>
+</section>
+
+<section class="card">
+  <label for="salary">Base de cálculo do INSS</label>
+  <div class="input-wrap">
+    <span class="prefix">R$</span>
+    <input id="salary" inputmode="decimal" placeholder="0,00" aria-label="Base de cálculo do INSS">
+  </div>
+  <div id="error" class="error">Informe um valor válido.</div>
+  <button id="calculate" class="primary">CALCULAR DESCONTO</button>
+
+  <div id="result" class="result">
+    <div class="kicker">Resultado</div>
+    <h2>Composição da contribuição</h2>
+
+    <div class="total">
+      <span>Desconto previdenciário</span>
+      <strong id="total">R$ 0,00</strong>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Faixa</th>
+          <th>Parcela na faixa</th>
+          <th>Alíquota</th>
+          <th style="text-align:right">Contribuição</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3">Total</td>
+          <td class="num" id="totalTable">R$ 0,00</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="note">
+      <strong>Atenção:</strong> no caso de segurado com mais de um vínculo empregatício, as remunerações devem ser somadas para fins de aplicação da alíquota progressiva, observado o limite máximo do salário de contribuição.
+      <br><br>
+      <strong>O cálculo é realizado por faixa de salário de contribuição.</strong> A alíquota de uma faixa não é aplicada sobre o valor total da remuneração.
+    </div>
+
+    <div class="info">
+      Tabela válida a partir da competência janeiro de 2026.<br>
+      <strong>Base normativa:</strong> Portaria Interministerial MPS/MF nº 13, de 9 de janeiro de 2026 —
+      <a href="https://www.gov.br/previdencia/pt-br/assuntos/rpps/documentos/PortariaInterministerialMPSMF13de9dejaneirode2026.pdf" target="_blank" rel="noopener" style="color:#A85F43;">consultar portaria oficial</a>.
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>CálculoJus · Ferramentas gratuitas</footer>
+
+<script>
+const FAIXAS = [
+  {limite:1621.00, aliquota:0.075, nome:"Até R$ 1.621,00"},
+  {limite:2902.84, aliquota:0.09, nome:"De R$ 1.621,01 a R$ 2.902,84"},
+  {limite:4354.27, aliquota:0.12, nome:"De R$ 2.902,85 a R$ 4.354,27"},
+  {limite:8475.55, aliquota:0.14, nome:"De R$ 4.354,28 a R$ 8.475,55"}
+];
+
+const money = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const pct = v => (v*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+
+function parseBR(v){
+  v=v.trim().replace(/\s/g,'');
+  if(!v) return NaN;
+  if(v.includes(',')) v=v.replace(/\./g,'').replace(',','.');
+  return Number(v);
+}
+
+function calculate(){
+  const raw=parseBR(document.getElementById('salary').value);
+  const error=document.getElementById('error');
+  const result=document.getElementById('result');
+
+  if(!Number.isFinite(raw) || raw<0){
+    error.classList.add('show'); result.classList.remove('show'); return;
+  }
+  error.classList.remove('show');
+
+  const base=Math.min(raw, FAIXAS[FAIXAS.length-1].limite);
+  let anterior=0, total=0, rows='';
+
+  FAIXAS.forEach((f,i)=>{
+    const parcela=Math.max(0, Math.min(base,f.limite)-anterior);
+    if(parcela>0){
+      const contribuicao=parcela*f.aliquota;
+      total+=contribuicao;
+      rows+=`<tr><td>${i+1}ª faixa</td><td>${money(parcela)}</td><td>${pct(f.aliquota)}</td><td class="num">${money(contribuicao)}</td></tr>`;
+    }
+    anterior=f.limite;
+  });
+
+  document.getElementById('rows').innerHTML=rows || '<tr><td colspan="4">Sem contribuição calculada.</td></tr>';
+  document.getElementById('total').textContent=money(total);
+  document.getElementById('totalTable').textContent=money(total);
+  result.classList.add('show');
+}
+
+document.getElementById('calculate').addEventListener('click',calculate);
+document.getElementById('salary').addEventListener('keydown',e=>{if(e.key==='Enter')calculate()});
+</script>
+</body>
+</html>
