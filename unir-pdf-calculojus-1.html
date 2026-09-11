@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unir PDF | CálculoJus</title>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#F3E9DC;color:#172B46;font-family:Arial,sans-serif}
+header{background:#fff;border-bottom:1px solid #e5ddd2}
+.nav{max-width:1120px;margin:auto;padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:Georgia,serif;font-size:25px;font-weight:700;color:#172B46;display:flex;align-items:center;gap:10px}
+.logo-bar{width:5px;height:30px;background:#A85F43}
+.back{color:#172B46;text-decoration:none;font-size:14px}
+main{max-width:1120px;margin:0 auto;padding:55px 22px 70px}
+.hero{text-align:center;max-width:760px;margin:0 auto 34px}
+h1{font:700 40px Georgia,serif;margin:0 0 12px}
+.hero p{font-size:17px;line-height:1.6;color:#6F747A;margin:0}
+.card{background:#fff;border-radius:14px;padding:28px;box-shadow:0 8px 30px rgba(23,43,70,.08)}
+.drop{border:2px dashed #A85F43;border-radius:12px;padding:42px 20px;text-align:center;background:#fffaf5;transition:.2s}
+.drop.over{background:#F3E9DC;transform:scale(1.005)}
+.drop strong{display:block;font:700 22px Georgia,serif;margin-bottom:8px}
+.drop span{display:block;color:#6F747A;margin-bottom:18px}
+button{border:0;border-radius:8px;padding:12px 18px;font-weight:700;cursor:pointer;font-size:14px}
+.primary{background:#A85F43;color:#fff}
+.secondary{background:#F3E9DC;color:#172B46}
+input[type=file]{display:none}
+.toolbar{display:flex;justify-content:space-between;align-items:center;margin:26px 0 14px;gap:12px;flex-wrap:wrap}
+.count{font-weight:700}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{display:flex;align-items:center;gap:12px;border:1px solid #e5ddd2;border-radius:9px;padding:12px;background:#fff}
+.handle{cursor:grab;font-size:20px;color:#6F747A;user-select:none}
+.num{width:30px;height:30px;border-radius:50%;background:#F3E9DC;display:flex;align-items:center;justify-content:center;font-weight:700}
+.name{flex:1;min-width:0}
+.name b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{font-size:12px;color:#6F747A;margin-top:3px}
+.remove{background:transparent;color:#A85F43;padding:7px 9px}
+.preview-title{font:700 23px Georgia,serif;margin:34px 0 15px}
+.preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:15px}
+.page{border:1px solid #e5ddd2;border-radius:8px;background:#fafafa;padding:8px;text-align:center}
+.page canvas{width:100%;height:auto;display:block;background:#fff;border-radius:4px}
+.page small{display:block;margin-top:7px;color:#6F747A}
+.actions{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.filename{flex:1;min-width:260px;padding:13px;border:1px solid #d9d0c5;border-radius:8px;font-size:14px;color:#172B46}
+.status{margin-top:18px;padding:13px;border-radius:8px;background:#F3E9DC;color:#172B46;display:none}
+.status.show{display:block}
+footer{text-align:center;color:#6F747A;font-size:12px;padding:25px}
+@media(max-width:650px){
+h1{font-size:31px}
+main{padding-top:38px}
+.card{padding:18px}
+.drop{padding:30px 14px}
+.item{gap:8px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav">
+    <div class="logo"><i class="logo-bar"></i>CálculoJus</div>
+    <a class="back" href="/">← Voltar ao CálculoJus</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>Unir PDF</h1>
+    <p>Junte vários arquivos PDF em um único documento, organize a ordem das páginas e gere o arquivo final diretamente no seu navegador.</p>
+  </section>
+
+  <section class="card">
+    <div id="drop" class="drop">
+      <strong>Arraste seus PDFs aqui</strong>
+      <span>ou selecione vários arquivos do seu dispositivo</span>
+      <label>
+        <button class="primary" type="button" onclick="fileInput.click()">Selecionar PDFs</button>
+        <input id="fileInput" type="file" accept="application/pdf,.pdf" multiple>
+      </label>
+    </div>
+
+    <div id="workspace" style="display:none">
+      <div class="toolbar">
+        <div id="count" class="count"></div>
+        <button id="addBtn" class="secondary">+ Adicionar mais PDFs</button>
+      </div>
+      <div id="list" class="list"></div>
+
+      <div class="preview-title">Preview</div>
+      <div id="preview" class="preview"></div>
+
+      <div class="actions">
+        <input id="filename" class="filename" value="PDFs unificados - por CalculoJusApp.pdf" aria-label="Nome do arquivo">
+        <button id="generate" class="primary">Gerar PDF</button>
+        <button id="clear" class="secondary">Limpar tudo</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+  </section>
+</main>
+
+<footer>Processamento realizado no navegador. Os arquivos não são enviados para um servidor.</footer>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const { PDFDocument } = PDFLib;
+const fileInput=document.getElementById('fileInput');
+const drop=document.getElementById('drop');
+const workspace=document.getElementById('workspace');
+const list=document.getElementById('list');
+const preview=document.getElementById('preview');
+const count=document.getElementById('count');
+const status=document.getElementById('status');
+const filename=document.getElementById('filename');
+let files=[];
+let draggedIndex=null;
+
+fileInput.addEventListener('change',e=>addFiles([...e.target.files]));
+document.getElementById('addBtn').onclick=()=>fileInput.click();
+
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault(); drop.classList.add('over');
+}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault(); drop.classList.remove('over');
+}));
+drop.addEventListener('drop',e=>{
+  const incoming=[...e.dataTransfer.files].filter(f=>f.type==='application/pdf'||f.name.toLowerCase().endsWith('.pdf'));
+  addFiles(incoming);
+});
+
+function addFiles(incoming){
+  if(!incoming.length)return;
+  files.push(...incoming);
+  workspace.style.display='block';
+  renderList();
+  renderPreview();
+}
+
+function renderList(){
+  list.innerHTML='';
+  files.forEach((f,i)=>{
+    const el=document.createElement('div');
+    el.className='item';
+    el.draggable=true;
+    el.innerHTML=`
+      <div class="handle" title="Arraste para reordenar">☰</div>
+      <div class="num">${i+1}</div>
+      <div class="name"><b>${escapeHtml(f.name)}</b><div class="meta">${formatBytes(f.size)}</div></div>
+      <button class="remove" title="Remover">Excluir</button>`;
+    el.addEventListener('dragstart',()=>draggedIndex=i);
+    el.addEventListener('dragover',e=>e.preventDefault());
+    el.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(draggedIndex===null||draggedIndex===i)return;
+      const [moved]=files.splice(draggedIndex,1);
+      files.splice(i,0,moved);
+      draggedIndex=null;
+      renderList(); renderPreview();
+    });
+    el.querySelector('.remove').onclick=()=>{
+      files.splice(i,1);
+      if(!files.length){workspace.style.display='none';preview.innerHTML='';}
+      renderList(); renderPreview();
+    };
+    list.appendChild(el);
+  });
+  count.textContent=`${files.length} arquivo${files.length===1?'':'s'} selecionado${files.length===1?'':'s'}`;
+}
+
+async function renderPreview(){
+  preview.innerHTML='';
+  for(let fi=0;fi<files.length;fi++){
+    try{
+      const data=await files[fi].arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data}).promise;
+      for(let p=1;p<=pdf.numPages;p++){
+        const page=await pdf.getPage(p);
+        const viewport=page.getViewport({scale:0.65});
+        const canvas=document.createElement('canvas');
+        canvas.width=viewport.width; canvas.height=viewport.height;
+        await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+        const box=document.createElement('div');
+        box.className='page';
+        box.appendChild(canvas);
+        const small=document.createElement('small');
+        small.textContent=`${fi+1}.${p} — ${files[fi].name}`;
+        box.appendChild(small);
+        preview.appendChild(box);
+      }
+    }catch(err){
+      const box=document.createElement('div');
+      box.className='page';
+      box.innerHTML='<small>Não foi possível gerar o preview deste PDF.</small>';
+      preview.appendChild(box);
+    }
+  }
+}
+
+document.getElementById('generate').onclick=async()=>{
+  if(!files.length)return;
+  const btn=document.getElementById('generate');
+  btn.disabled=true;
+  showStatus('Gerando PDF...');
+  try{
+    const merged=await PDFDocument.create();
+    for(const file of files){
+      const bytes=await file.arrayBuffer();
+      const src=await PDFDocument.load(bytes);
+      const pages=await merged.copyPages(src,src.getPageIndices());
+      pages.forEach(p=>merged.addPage(p));
+    }
+    const output=await merged.save();
+    let name=filename.value.trim()||'PDFs unificados - por CalculoJusApp.pdf';
+    if(!name.toLowerCase().endsWith('.pdf'))name+='.pdf';
+    const blob=new Blob([output],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=name;a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    showStatus('PDF criado com sucesso. O download foi iniciado.');
+  }catch(err){
+    console.error(err);
+    showStatus('Não foi possível gerar o PDF. Verifique se os arquivos estão protegidos por senha ou são PDFs válidos.');
+  }finally{btn.disabled=false;}
+};
+
+document.getElementById('clear').onclick=()=>{
+  files=[];fileInput.value='';workspace.style.display='none';list.innerHTML='';preview.innerHTML='';status.classList.remove('show');
+};
+
+function showStatus(msg){status.textContent=msg;status.classList.add('show')}
+function formatBytes(n){
+  if(n<1024)return n+' B';
+  if(n<1024*1024)return (n/1024).toFixed(1)+' KB';
+  return (n/1024/1024).toFixed(1)+' MB';
+}
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+</script>
+</body>
+</html>
